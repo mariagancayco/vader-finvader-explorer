@@ -1,46 +1,210 @@
-
-<h2 class="sr-only">VADER vs FinVADER sentiment analysis explorer — lexicon comparison and side-by-side classification of financial tweets, student-friendly version</h2>
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VADER vs FinVADER Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 0.5px solid var(--color-border-tertiary); }
-  .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: var(--font-sans); }
-  .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); font-weight: 500; }
-  .tab:hover:not(.active) { color: var(--color-text-primary); }
-  .section { display: none; } .section.active { display: block; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: var(--border-radius-md); font-size: 11px; font-weight: 500; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #eeede8;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.25);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font: 'Inter', system-ui, sans-serif;
+    --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #242422;
+      --text-primary: #f0efe8;
+      --text-secondary: #9a9a94;
+      --border: rgba(255,255,255,0.12);
+      --border-strong: rgba(255,255,255,0.25);
+    }
+    .bull { background: #27500a !important; color: #c0dd97 !important; }
+    .bear { background: #501313 !important; color: #f09595 !important; }
+    .neut { background: #444441 !important; color: #d3d1c7 !important; }
+    .word-pos { background: #27500a !important; color: #c0dd97 !important; }
+    .word-neg { background: #501313 !important; color: #f09595 !important; }
+    .override-flip { background: #412402 !important; color: #fac775 !important; }
+    .override-damp { background: #042c53 !important; color: #85b7eb !important; }
+    .fl-amp { background: #173404 !important; color: #c0dd97 !important; }
+    select, option { background: #2a2a28; color: #f0efe8; }
+  }
+
+  body {
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  h1 { font-size: 1.1rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--text-primary); }
+
+  .tabs {
+    display: flex; gap: 4px;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .tab {
+    padding: 8px 16px; font-size: 14px; cursor: pointer;
+    border: none; background: none;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-family: var(--font);
+    transition: color 0.15s;
+  }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--text-primary); }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: var(--radius-md);
+    font-size: 11px; font-weight: 500;
+  }
   .bull { background: #EAF3DE; color: #3B6D11; }
   .bear { background: #FCEBEB; color: #A32D2D; }
   .neut { background: #F1EFE8; color: #5F5E5A; }
-  .correct { color: #3B6D11; } .wrong { color: #A32D2D; }
-  .tweet-card { padding: 1rem 1.25rem; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); margin-bottom: 10px; background: var(--color-background-primary); }
+
+  .correct { color: #3B6D11; }
+  .wrong { color: #A32D2D; }
+
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .score-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 14px; }
-  .score-num { font-size: 22px; font-weight: 500; }
-  .score-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
-  .word-chip { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: var(--border-radius-md); margin: 2px; font-family: var(--font-mono); }
+
+  .score-box {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+  }
+
+  .tweet-card {
+    padding: 1rem 1.25rem;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 10px;
+    background: var(--bg-primary);
+  }
+
+  .word-chip {
+    display: inline-block; font-size: 11px;
+    padding: 2px 7px; border-radius: var(--radius-md);
+    margin: 2px; font-family: var(--font-mono);
+  }
   .word-pos { background: #EAF3DE; color: #27500A; }
   .word-neg { background: #FCEBEB; color: #791F1F; }
+
   .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
-  .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; text-align: center; }
+  .stat-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 1rem; text-align: center;
+  }
   .stat-num { font-size: 28px; font-weight: 500; }
-  .stat-lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
-  .lex-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; }
-  .lex-word { font-family: var(--font-mono); font-size: 12px; flex: 1; color: var(--color-text-primary); }
-  .lex-score { min-width: 52px; text-align: right; font-weight: 500; }
-  .lex-bar-wrap { flex: 2; display: flex; align-items: center; }
-  .lex-bar { height: 8px; border-radius: 2px; }
+  .stat-lbl { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
   .filter-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
-  .filter-row select { font-size: 13px; }
+  select {
+    font-size: 13px; padding: 5px 10px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font);
+    cursor: pointer;
+  }
+
+  .info-box {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 10px 14px; margin-bottom: 1rem;
+  }
+
+  .fl { font-size: 11px; padding: 2px 7px; border-radius: var(--radius-md); white-space: nowrap; }
   .override-flip { background: #FAEEDA; color: #633806; }
   .override-damp { background: #E6F1FB; color: #0C447C; }
-  .fl { font-size: 11px; padding: 2px 7px; border-radius: var(--border-radius-md); white-space: nowrap; }
+  .fl-amp { background: #EAF3DE; color: #3B6D11; }
+
+  .diff-header {
+    display: grid;
+    grid-template-columns: 110px 1fr 60px 60px 70px;
+    gap: 8px; font-size: 11px;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .diff-row {
+    padding: 5px 0 3px;
+    border-top: 0.5px solid var(--border);
+  }
+  .diff-row-grid {
+    display: grid;
+    grid-template-columns: 110px 1fr 60px 60px 70px;
+    gap: 8px; align-items: center;
+  }
+  .diff-note {
+    font-size: 11px; color: var(--text-secondary);
+    margin: 2px 0 6px; line-height: 1.5;
+  }
+
+  .unique-header {
+    display: grid;
+    grid-template-columns: 150px 1fr 70px;
+    gap: 8px; font-size: 11px;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .unique-row {
+    display: grid;
+    grid-template-columns: 150px 1fr 70px;
+    gap: 8px; align-items: center;
+    padding: 5px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .legend {
+    display: flex; gap: 16px; margin-bottom: 8px;
+    font-size: 12px; color: var(--text-secondary);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+  p.muted { font-size: 13px; color: var(--text-secondary); margin-bottom: 0.5rem; }
 </style>
+</head>
+<body>
+
+<h1>VADER vs FinVADER sentiment analysis explorer — lexicon comparison and side-by-side classification of financial tweets</h1>
 
 <div class="tabs">
-  <button class="tab active" onclick="showTab('overview')">Overview</button>
-  <button class="tab" onclick="showTab('tweets')">Tweet explorer</button>
-  <button class="tab" onclick="showTab('lexicon')">Lexicon diff</button>
-  <button class="tab" onclick="showTab('unique')">Financial-only terms</button>
+  <button class="tab active" onclick="showTab('overview', this)">Overview</button>
+  <button class="tab" onclick="showTab('tweets', this)">Tweet explorer</button>
+  <button class="tab" onclick="showTab('lexicon', this)">Lexicon diff</button>
+  <button class="tab" onclick="showTab('unique', this)">Financial-only terms</button>
 </div>
 
 <div id="tab-overview" class="section active">
@@ -55,31 +219,35 @@
     </div>
   </div>
 
-  <div style="margin-bottom: 1.5rem; position: relative; height: 260px;">
-    <canvas id="accChart" role="img" aria-label="Grouped bar chart comparing VADER and FinVADER accuracy across Bullish, Bearish, and Neutral tweet categories.">Accuracy comparison across sentiment categories.</canvas>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#378ADD"></div>VADER</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#D85A30"></div>FinVADER</div>
+  </div>
+  <div style="position:relative;width:100%;height:260px;margin-bottom:1.5rem;">
+    <canvas id="accChart" role="img" aria-label="Grouped bar chart comparing VADER and FinVADER accuracy across Bullish, Bearish, and Neutral categories.">Accuracy comparison across sentiment categories.</canvas>
   </div>
 
-  <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem;">How FinVADER extends VADER</p>
-  <div class="grid2" style="margin-bottom: 1rem;">
+  <p class="muted" style="margin-bottom:1rem;">How FinVADER extends VADER</p>
+  <div class="grid2" style="margin-bottom:1rem;">
     <div class="score-box">
-      <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px;">VADER base</div>
-      <div style="font-size: 24px; font-weight: 500;">7,506</div>
-      <div style="font-size: 12px; color: var(--color-text-secondary);">lexicon terms</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px;">VADER base</div>
+      <div style="font-size:24px;font-weight:500;">7,506</div>
+      <div style="font-size:12px;color:var(--text-secondary);">lexicon terms</div>
     </div>
     <div class="score-box">
-      <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px;">Financial additions</div>
-      <div style="font-size: 24px; font-weight: 500;">+5,821</div>
-      <div style="font-size: 12px; color: var(--color-text-secondary);">unique financial terms</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px;">Financial additions</div>
+      <div style="font-size:24px;font-weight:500;">+5,821</div>
+      <div style="font-size:12px;color:var(--text-secondary);">unique financial terms</div>
     </div>
   </div>
   <div class="grid2">
-    <div class="score-box">
-      <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">SentiBignomics</div>
-      <div style="font-size: 12px; color: var(--color-text-secondary);">7,295 financial terms (scaled ×0.1 to dampen social-media intensity)</div>
+    <div class="info-box">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px;">SentiBignomics</div>
+      <div style="font-size:12px;color:var(--text-secondary);">7,295 financial terms (scaled ×0.1 to dampen social-media intensity)</div>
     </div>
-    <div class="score-box">
-      <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">Henry (2008)</div>
-      <div style="font-size: 12px; color: var(--color-text-secondary);">189 earnings-press-release words with flat ±1.5 scores</div>
+    <div class="info-box">
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Henry (2008)</div>
+      <div style="font-size:12px;color:var(--text-secondary);">189 earnings-press-release words with flat ±1.5 scores</div>
     </div>
   </div>
 </div>
@@ -104,7 +272,7 @@
 </div>
 
 <div id="tab-lexicon" class="section">
-  <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Words where VADER and FinVADER assign meaningfully different scores. FinVADER overrides VADER scores for 1,529 shared terms.</p>
+  <p class="muted">Words where VADER and FinVADER assign meaningfully different scores. FinVADER overrides VADER scores for 1,529 shared terms.</p>
   <div class="filter-row">
     <select id="diff-filter" onchange="renderDiffs()">
       <option value="all">All overrides</option>
@@ -117,7 +285,7 @@
 </div>
 
 <div id="tab-unique" class="section">
-  <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Terms in FinVADER's financial lexicons that do not appear in VADER at all — words VADER is completely blind to.</p>
+  <p class="muted">Terms in FinVADER's financial lexicons that do not appear in VADER at all — words VADER is completely blind to.</p>
   <div class="filter-row">
     <select id="unique-filter" onchange="renderUnique()">
       <option value="all">All</option>
@@ -180,66 +348,74 @@ const finOnly = [
   {"word":"exceeded","score":1.5},{"word":"momentum","score":1.5},{"word":"earnings","score":1.5},
   {"word":"growth","score":1.5},{"word":"dividend","score":1.5},{"word":"expand","score":1.0},
   {"word":"revenue","score":0.5},{"word":"guidance","score":0.5},{"word":"leverage","score":0.5},
+  {"word":"merger","score":0.5},{"word":"acquisition","score":0.5},{"word":"margin","score":0.5},
   {"word":"bearish","score":-1.5},{"word":"headwinds","score":-1.5},{"word":"underperform","score":-1.5},
   {"word":"downgrade","score":-1.5},{"word":"bankruptcy","score":-1.5},{"word":"default","score":-1.5},
   {"word":"recession","score":-1.5},{"word":"missed","score":-1.5},{"word":"losses","score":-1.5},
   {"word":"deficit","score":-1.5},{"word":"decline","score":-1.5},{"word":"decrease","score":-1.5},
-  {"word":"short","score":-1.5},{"word":"slump","score":-1.5},{"word":"liquidation","score":-1.5},
-  {"word":"inflation","score":-0.5},{"word":"restructuring","score":-0.5},{"word":"merger","score":0.5},
-  {"word":"acquisition","score":0.5},{"word":"margin","score":0.5}
+  {"word":"slump","score":-1.5},{"word":"liquidation","score":-1.5},
+  {"word":"inflation","score":-0.5},{"word":"restructuring","score":-0.5}
 ];
 
-function showTab(name) {
+function showTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  event.target.classList.add('active');
+  el.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
 }
 
-function badgeClass(label) { return label === 'Bullish' ? 'bull' : label === 'Bearish' ? 'bear' : 'neut'; }
-function scoreColor(v) { return v >= 0.05 ? '#639922' : v <= -0.05 ? '#E24B4A' : '#888780'; }
+function badgeClass(l) { return l === 'Bullish' ? 'bull' : l === 'Bearish' ? 'bear' : 'neut'; }
+function scoreColor(v) { return v >= 0.05 ? '#3B6D11' : v <= -0.05 ? '#A32D2D' : '#888780'; }
 
 function wordChips(words) {
-  if (!words || words.length === 0) return '<span style="font-size:11px;color:var(--color-text-secondary)">no lexicon hits</span>';
-  return words.map(([w, s]) => `<span class="word-chip ${s > 0 ? 'word-pos' : 'word-neg'}">${w} <span style="opacity:0.7">${s > 0 ? '+' : ''}${s.toFixed(2)}</span></span>`).join('');
+  if (!words || words.length === 0) return '<span style="font-size:11px;color:var(--text-secondary)">no lexicon hits</span>';
+  return words.map(([w, s]) =>
+    `<span class="word-chip ${s > 0 ? 'word-pos' : 'word-neg'}">${w} <span style="opacity:0.7">${s > 0 ? '+' : ''}${s.toFixed(2)}</span></span>`
+  ).join('');
 }
 
 function renderTweets() {
   const tf = document.getElementById('filter-true').value;
   const of = document.getElementById('filter-outcome').value;
-  let filtered = results.filter(r => {
+  const filtered = results.filter(r => {
     if (tf !== 'all' && r.true !== tf) return false;
-    if (of === 'agree' && !(r.vader_correct === r.fin_correct)) return false;
+    if (of === 'agree' && r.vader_correct !== r.fin_correct) return false;
     if (of === 'disagree' && r.vader_correct === r.fin_correct) return false;
     if (of === 'vader-only' && !(r.vader_correct && !r.fin_correct)) return false;
     if (of === 'fin-only' && !(!r.vader_correct && r.fin_correct)) return false;
     return true;
   });
   const container = document.getElementById('tweet-list');
-  if (filtered.length === 0) { container.innerHTML = '<p style="font-size:13px;color:var(--color-text-secondary)">No tweets match this filter.</p>'; return; }
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--text-secondary)">No tweets match this filter.</p>';
+    return;
+  }
   container.innerHTML = filtered.map(r => `
     <div class="tweet-card">
       <p style="font-size:13px;margin:0 0 10px;line-height:1.5">${r.text}</p>
-      <div style="margin-bottom:8px"><span style="font-size:11px;color:var(--color-text-secondary);margin-right:6px">True label:</span><span class="badge ${badgeClass(r.true)}">${r.true}</span></div>
+      <div style="margin-bottom:8px">
+        <span style="font-size:11px;color:var(--text-secondary);margin-right:6px">True label:</span>
+        <span class="badge ${badgeClass(r.true)}">${r.true}</span>
+      </div>
       <div class="grid2">
         <div class="score-box">
-          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500">VADER</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;font-weight:500">VADER</div>
           <div style="font-size:20px;font-weight:500;color:${scoreColor(r.vader_compound)}">${r.vader_compound.toFixed(3)}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
             <span class="badge ${badgeClass(r.vader_pred)}">${r.vader_pred}</span>
             <span style="font-size:11px" class="${r.vader_correct ? 'correct' : 'wrong'}">${r.vader_correct ? '✓ correct' : '✗ wrong'}</span>
           </div>
-          <div style="margin-top:8px;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">lexicon hits:</div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-secondary);margin-bottom:3px">lexicon hits:</div>
           <div>${wordChips(r.vader_words)}</div>
         </div>
         <div class="score-box">
-          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500">FinVADER</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;font-weight:500">FinVADER</div>
           <div style="font-size:20px;font-weight:500;color:${scoreColor(r.fin_compound)}">${r.fin_compound.toFixed(3)}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
             <span class="badge ${badgeClass(r.fin_pred)}">${r.fin_pred}</span>
             <span style="font-size:11px" class="${r.fin_correct ? 'correct' : 'wrong'}">${r.fin_correct ? '✓ correct' : '✗ wrong'}</span>
           </div>
-          <div style="margin-top:8px;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">lexicon hits:</div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-secondary);margin-bottom:3px">lexicon hits:</div>
           <div>${wordChips(r.fin_words)}</div>
         </div>
       </div>
@@ -249,7 +425,7 @@ function renderTweets() {
 
 function renderDiffs() {
   const f = document.getElementById('diff-filter').value;
-  let filtered = diffs.filter(d => {
+  const filtered = diffs.filter(d => {
     if (f === 'flip') return (d.vader > 0 && d.fin < 0) || (d.vader < 0 && d.fin > 0);
     if (f === 'damp') return Math.abs(d.fin) < Math.abs(d.vader);
     if (f === 'amp') return Math.abs(d.fin) > Math.abs(d.vader);
@@ -257,8 +433,11 @@ function renderDiffs() {
   });
   const maxDiff = 4;
   document.getElementById('diff-list').innerHTML = `
-    <div style="display:grid;grid-template-columns:110px 1fr 60px 60px 70px;gap:8px;font-size:11px;color:var(--color-text-secondary);padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:4px">
-      <span>word</span><span>score shift</span><span style="text-align:right">VADER</span><span style="text-align:right">FinVADER</span><span style="text-align:right">type</span>
+    <div class="diff-header">
+      <span>word</span><span>score shift</span>
+      <span style="text-align:right">VADER</span>
+      <span style="text-align:right">FinVADER</span>
+      <span style="text-align:right">type</span>
     </div>
     ${filtered.map(d => {
       const isFlip = (d.vader > 0 && d.fin < 0) || (d.vader < 0 && d.fin > 0);
@@ -267,18 +446,20 @@ function renderDiffs() {
         ? '<span class="fl override-flip">sign flip</span>'
         : isDamp
           ? '<span class="fl override-damp">damped</span>'
-          : '<span class="fl" style="background:#EAF3DE;color:#3B6D11">amplified</span>';
+          : '<span class="fl fl-amp">amplified</span>';
       const barW = Math.min(100, Math.abs(d.diff) / maxDiff * 100);
       const barColor = d.diff > 0 ? '#639922' : '#E24B4A';
-      return `<div>
-        <div style="display:grid;grid-template-columns:110px 1fr 60px 60px 70px;gap:8px;align-items:center;padding:5px 0 3px;border-top:0.5px solid var(--color-border-tertiary)">
+      return `<div class="diff-row">
+        <div class="diff-row-grid">
           <span style="font-family:var(--font-mono);font-size:12px">${d.word}</span>
-          <div style="display:flex;align-items:center;gap:4px"><div style="width:${barW}%;min-width:2px;height:8px;background:${barColor};border-radius:2px"></div></div>
-          <span style="text-align:right;font-size:12px;color:${d.vader >= 0 ? '#639922' : '#E24B4A'}">${d.vader > 0 ? '+' : ''}${d.vader.toFixed(2)}</span>
-          <span style="text-align:right;font-size:12px;color:${d.fin >= 0 ? '#639922' : '#E24B4A'}">${d.fin > 0 ? '+' : ''}${d.fin.toFixed(2)}</span>
+          <div style="display:flex;align-items:center">
+            <div style="width:${barW}%;min-width:2px;height:8px;background:${barColor};border-radius:2px"></div>
+          </div>
+          <span style="text-align:right;font-size:12px;color:${d.vader >= 0 ? '#3B6D11' : '#A32D2D'}">${d.vader > 0 ? '+' : ''}${d.vader.toFixed(2)}</span>
+          <span style="text-align:right;font-size:12px;color:${d.fin >= 0 ? '#3B6D11' : '#A32D2D'}">${d.fin > 0 ? '+' : ''}${d.fin.toFixed(2)}</span>
           <div style="text-align:right">${typeTag}</div>
         </div>
-        <p style="font-size:11px;color:var(--color-text-secondary);margin:2px 0 6px;line-height:1.5">${d.note}</p>
+        <p class="diff-note">${d.note}</p>
       </div>`;
     }).join('')}
   `;
@@ -286,24 +467,28 @@ function renderDiffs() {
 
 function renderUnique() {
   const pf = document.getElementById('unique-filter').value;
-  let filtered = finOnly.filter(d => {
+  const filtered = finOnly.filter(d => {
     if (pf === 'pos' && d.score <= 0) return false;
     if (pf === 'neg' && d.score >= 0) return false;
     return true;
   });
   document.getElementById('unique-list').innerHTML = `
-    <div style="display:grid;grid-template-columns:150px 1fr 70px;gap:8px;font-size:11px;color:var(--color-text-secondary);padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:4px">
+    <div class="unique-header">
       <span>term</span><span>sentiment score</span><span style="text-align:right">polarity</span>
     </div>
     ${filtered.map(d => {
       const barW = Math.min(100, Math.abs(d.score) / 1.5 * 100);
       const barColor = d.score > 0 ? '#639922' : '#E24B4A';
-      const pol = d.score > 0 ? '<span class="badge bull">positive</span>' : d.score < 0 ? '<span class="badge bear">negative</span>' : '<span class="badge neut">neutral</span>';
-      return `<div style="display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+      const pol = d.score > 0
+        ? '<span class="badge bull">positive</span>'
+        : d.score < 0
+          ? '<span class="badge bear">negative</span>'
+          : '<span class="badge neut">neutral</span>';
+      return `<div class="unique-row">
         <span style="font-family:var(--font-mono);font-size:12px">${d.word}</span>
-        <div style="display:flex;align-items:center;gap:4px">
+        <div style="display:flex;align-items:center;gap:6px">
           <div style="width:${barW}%;min-width:2px;height:8px;background:${barColor};border-radius:2px"></div>
-          <span style="font-size:11px;color:var(--color-text-secondary)">${d.score > 0 ? '+' : ''}${d.score.toFixed(2)}</span>
+          <span style="font-size:11px;color:var(--text-secondary)">${d.score > 0 ? '+' : ''}${d.score.toFixed(2)}</span>
         </div>
         <div style="text-align:right">${pol}</div>
       </div>`;
@@ -333,8 +518,8 @@ new Chart(document.getElementById('accChart'), {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-      y: { beginAtZero: true, max: 110, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(128,128,128,0.1)' } },
-      x: { grid: { display: false } }
+      y: { beginAtZero: true, max: 110, ticks: { callback: v => v + '%', color: '#6b6b67' }, grid: { color: 'rgba(128,128,128,0.12)' } },
+      x: { grid: { display: false }, ticks: { color: '#6b6b67' } }
     }
   }
 });
@@ -344,3 +529,5 @@ document.getElementById('f-acc').textContent = Math.round(fCorrect.length / resu
 
 renderTweets(); renderDiffs(); renderUnique();
 </script>
+</body>
+</html>
