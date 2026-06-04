@@ -1,0 +1,346 @@
+
+<h2 class="sr-only">VADER vs FinVADER sentiment analysis explorer — lexicon comparison and side-by-side classification of financial tweets, student-friendly version</h2>
+
+<style>
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: var(--font-sans); }
+  .tab.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--color-text-primary); }
+  .section { display: none; } .section.active { display: block; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: var(--border-radius-md); font-size: 11px; font-weight: 500; }
+  .bull { background: #EAF3DE; color: #3B6D11; }
+  .bear { background: #FCEBEB; color: #A32D2D; }
+  .neut { background: #F1EFE8; color: #5F5E5A; }
+  .correct { color: #3B6D11; } .wrong { color: #A32D2D; }
+  .tweet-card { padding: 1rem 1.25rem; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); margin-bottom: 10px; background: var(--color-background-primary); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .score-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 14px; }
+  .score-num { font-size: 22px; font-weight: 500; }
+  .score-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .word-chip { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: var(--border-radius-md); margin: 2px; font-family: var(--font-mono); }
+  .word-pos { background: #EAF3DE; color: #27500A; }
+  .word-neg { background: #FCEBEB; color: #791F1F; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 500; }
+  .stat-lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+  .lex-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; }
+  .lex-word { font-family: var(--font-mono); font-size: 12px; flex: 1; color: var(--color-text-primary); }
+  .lex-score { min-width: 52px; text-align: right; font-weight: 500; }
+  .lex-bar-wrap { flex: 2; display: flex; align-items: center; }
+  .lex-bar { height: 8px; border-radius: 2px; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .filter-row select { font-size: 13px; }
+  .override-flip { background: #FAEEDA; color: #633806; }
+  .override-damp { background: #E6F1FB; color: #0C447C; }
+  .fl { font-size: 11px; padding: 2px 7px; border-radius: var(--border-radius-md); white-space: nowrap; }
+</style>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('overview')">Overview</button>
+  <button class="tab" onclick="showTab('tweets')">Tweet explorer</button>
+  <button class="tab" onclick="showTab('lexicon')">Lexicon diff</button>
+  <button class="tab" onclick="showTab('unique')">Financial-only terms</button>
+</div>
+
+<div id="tab-overview" class="section active">
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-num" id="v-acc">75%</div>
+      <div class="stat-lbl">VADER accuracy</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="f-acc">60%</div>
+      <div class="stat-lbl">FinVADER accuracy</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 1.5rem; position: relative; height: 260px;">
+    <canvas id="accChart" role="img" aria-label="Grouped bar chart comparing VADER and FinVADER accuracy across Bullish, Bearish, and Neutral tweet categories.">Accuracy comparison across sentiment categories.</canvas>
+  </div>
+
+  <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem;">How FinVADER extends VADER</p>
+  <div class="grid2" style="margin-bottom: 1rem;">
+    <div class="score-box">
+      <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px;">VADER base</div>
+      <div style="font-size: 24px; font-weight: 500;">7,506</div>
+      <div style="font-size: 12px; color: var(--color-text-secondary);">lexicon terms</div>
+    </div>
+    <div class="score-box">
+      <div style="font-size: 13px; font-weight: 500; margin-bottom: 6px;">Financial additions</div>
+      <div style="font-size: 24px; font-weight: 500;">+5,821</div>
+      <div style="font-size: 12px; color: var(--color-text-secondary);">unique financial terms</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="score-box">
+      <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">SentiBignomics</div>
+      <div style="font-size: 12px; color: var(--color-text-secondary);">7,295 financial terms (scaled ×0.1 to dampen social-media intensity)</div>
+    </div>
+    <div class="score-box">
+      <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">Henry (2008)</div>
+      <div style="font-size: 12px; color: var(--color-text-secondary);">189 earnings-press-release words with flat ±1.5 scores</div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-tweets" class="section">
+  <div class="filter-row">
+    <select id="filter-true" onchange="renderTweets()">
+      <option value="all">All labels</option>
+      <option value="Bullish">Bullish</option>
+      <option value="Bearish">Bearish</option>
+      <option value="Neutral">Neutral</option>
+    </select>
+    <select id="filter-outcome" onchange="renderTweets()">
+      <option value="all">Any outcome</option>
+      <option value="agree">Both agree</option>
+      <option value="disagree">Models disagree</option>
+      <option value="vader-only">Only VADER correct</option>
+      <option value="fin-only">Only FinVADER correct</option>
+    </select>
+  </div>
+  <div id="tweet-list"></div>
+</div>
+
+<div id="tab-lexicon" class="section">
+  <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Words where VADER and FinVADER assign meaningfully different scores. FinVADER overrides VADER scores for 1,529 shared terms.</p>
+  <div class="filter-row">
+    <select id="diff-filter" onchange="renderDiffs()">
+      <option value="all">All overrides</option>
+      <option value="flip">Sign flip (pos↔neg)</option>
+      <option value="damp">Damped by FinVADER</option>
+      <option value="amp">Amplified by FinVADER</option>
+    </select>
+  </div>
+  <div id="diff-list"></div>
+</div>
+
+<div id="tab-unique" class="section">
+  <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 0.5rem;">Terms in FinVADER's financial lexicons that do not appear in VADER at all — words VADER is completely blind to.</p>
+  <div class="filter-row">
+    <select id="unique-filter" onchange="renderUnique()">
+      <option value="all">All</option>
+      <option value="pos">Positive only</option>
+      <option value="neg">Negative only</option>
+    </select>
+  </div>
+  <div id="unique-list"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const results = [
+  {"text":"$AAPL earnings beat expectations — revenue up 12% YoY. Strong iPhone demand continues into Q4.","true":"Bullish","vader_compound":0.4215,"vader_pred":"Bullish","vader_correct":true,"fin_compound":0.7615,"fin_pred":"Bullish","fin_correct":true,"vader_words":[["strong",3.1],["demand",0.4]],"fin_words":[["strong",3.1],["demand",0.4],["earnings",1.5],["beat",1.5]]},
+  {"text":"Goldman Sachs upgrades $TSLA to Buy, price target raised to $280. EV market share expanding faster than expected.","true":"Bullish","vader_compound":0.296,"vader_pred":"Bullish","vader_correct":true,"fin_compound":0.3747,"fin_pred":"Bullish","fin_correct":true,"vader_words":[],"fin_words":[["faster",0.15]]},
+  {"text":"$NVDA soaring after record data center revenue. AI chip demand shows no signs of slowing down.","true":"Bullish","vader_compound":-0.4019,"vader_pred":"Bearish","vader_correct":false,"fin_compound":-0.296,"fin_pred":"Bearish","fin_correct":false,"vader_words":[["no",-1.5],["slowing",-0.7]],"fin_words":[["no",-1.5],["slowing",-0.7],["demand",0.04],["record",0.1]]},
+  {"text":"Amazon reports strong AWS growth, beating analyst estimates. Cloud momentum accelerating.","true":"Bullish","vader_compound":0.5106,"vader_pred":"Bullish","vader_correct":true,"fin_compound":0.7783,"fin_pred":"Bullish","fin_correct":true,"vader_words":[["strong",3.1],["beating",-2.0]],"fin_words":[["strong",3.1],["beating",1.5],["growth",1.5],["momentum",1.5]]},
+  {"text":"$JPM raises dividend by 10%. Management confident in continued earnings growth.","true":"Bullish","vader_compound":0.5859,"vader_pred":"Bullish","vader_correct":true,"fin_compound":0.8481,"fin_pred":"Bullish","fin_correct":true,"vader_words":[["confident",1.9]],"fin_words":[["confident",1.9],["dividend",1.5],["earnings",1.5],["growth",1.5]]},
+  {"text":"$META stock tumbles after disappointing ad revenue growth and rising capex guidance.","true":"Bearish","vader_compound":-0.5267,"vader_pred":"Bearish","vader_correct":true,"fin_compound":-0.4939,"fin_pred":"Bearish","fin_correct":true,"vader_words":[["disappointing",-2.2],["growth",0.4]],"fin_words":[["disappointing",-1.5],["growth",1.5]]},
+  {"text":"Inflation data worse than expected. Fed likely to keep rates higher for longer. Markets under pressure.","true":"Bearish","vader_compound":-0.4404,"vader_pred":"Bearish","vader_correct":true,"fin_compound":-0.5994,"fin_pred":"Bearish","fin_correct":true,"vader_words":[["worse",-1.5],["pressure",-1.4]],"fin_words":[["worse",-1.5],["pressure",-1.4],["higher",0.15],["under",-1.5]]},
+  {"text":"$INTC warns of weak demand. PC market slump deepening. Another quarter of declining margins.","true":"Bearish","vader_compound":-0.765,"vader_pred":"Bearish","vader_correct":true,"fin_compound":-0.8807,"fin_pred":"Bearish","fin_correct":true,"vader_words":[["weak",-1.8],["slump",-2.0]],"fin_words":[["weak",-1.5],["slump",-1.5],["declining",-1.5],["demand",0.04]]},
+  {"text":"Supply chain disruptions hitting $F hard. Ford cuts full-year guidance amid rising costs.","true":"Bearish","vader_compound":-0.296,"vader_pred":"Bearish","vader_correct":true,"fin_compound":-0.4927,"fin_pred":"Bearish","fin_correct":true,"vader_words":[["hard",-0.6],["cuts",-1.3]],"fin_words":[["hard",-0.6],["cuts",-1.5],["rising",0.15]]},
+  {"text":"$COIN plunges as crypto winter bites. Trading volumes collapsed 40% quarter-over-quarter.","true":"Bearish","vader_compound":-0.4939,"vader_pred":"Bearish","vader_correct":true,"fin_compound":-0.5106,"fin_pred":"Bearish","fin_correct":true,"vader_words":[["winter",-0.5]],"fin_words":[["winter",-0.5],["collapsed",-0.15]]},
+  {"text":"$GS reports Q3 earnings in line with expectations. No major surprises.","true":"Neutral","vader_compound":-0.2263,"vader_pred":"Bearish","vader_correct":false,"fin_compound":0.0,"fin_pred":"Neutral","fin_correct":true,"vader_words":[["no",-1.5]],"fin_words":[["no",-1.5],["earnings",1.5],["major",0.15]]},
+  {"text":"Fed holds rates steady. Statement largely unchanged from previous meeting.","true":"Neutral","vader_compound":0.0,"vader_pred":"Neutral","vader_correct":true,"fin_compound":0.0,"fin_pred":"Neutral","fin_correct":true,"vader_words":[],"fin_words":[]},
+  {"text":"$MSFT announces new product lineup at annual developer conference.","true":"Neutral","vader_compound":0.0,"vader_pred":"Neutral","vader_correct":true,"fin_compound":0.0,"fin_pred":"Neutral","fin_correct":true,"vader_words":[],"fin_words":[]},
+  {"text":"Oil prices flat as OPEC+ decision expected to maintain current output levels.","true":"Neutral","vader_compound":0.0,"vader_pred":"Neutral","vader_correct":true,"fin_compound":0.0,"fin_pred":"Neutral","fin_correct":true,"vader_words":[],"fin_words":[]},
+  {"text":"$WMT quarterly results meet consensus. Management provides no updated guidance.","true":"Neutral","vader_compound":-0.2732,"vader_pred":"Bearish","vader_correct":false,"fin_compound":0.0,"fin_pred":"Neutral","fin_correct":true,"vader_words":[["no",-1.5]],"fin_words":[["no",-1.5],["results",1.5]]},
+  {"text":"$AMZN stock fell despite beating estimates. Investors concerned about slowing growth.","true":"Bearish","vader_compound":0.1027,"vader_pred":"Bullish","vader_correct":false,"fin_compound":0.4215,"fin_pred":"Bullish","fin_correct":false,"vader_words":[["fell",-1.3],["beating",-2.0],["concerned",-0.7]],"fin_words":[["fell",-1.5],["beating",1.5],["concerned",-0.07],["slowing",-0.07],["growth",1.5]]},
+  {"text":"The market faces significant challenges heading into Q4 amid rising uncertainty.","true":"Bearish","vader_compound":-0.4767,"vader_pred":"Bearish","vader_correct":true,"fin_compound":-0.7783,"fin_pred":"Bearish","fin_correct":true,"vader_words":[["significant",0.9],["challenges",-0.2],["uncertainty",-1.9]],"fin_words":[["significant",0.9],["challenges",-1.5],["uncertainty",-1.5],["rising",0.15]]},
+  {"text":"$GOOG beats revenue targets. Strong performance driven by Search and YouTube.","true":"Bullish","vader_compound":0.7906,"vader_pred":"Bullish","vader_correct":true,"fin_compound":0.8625,"fin_pred":"Bullish","fin_correct":true,"vader_words":[["strong",3.1],["performance",0.5]],"fin_words":[["strong",3.1],["performance",0.5],["beats",1.5],["revenue",0.15]]},
+  {"text":"Bullish momentum continues as $SPY breaks through resistance levels.","true":"Bullish","vader_compound":0.0,"vader_pred":"Neutral","vader_correct":false,"fin_compound":0.4215,"fin_pred":"Bullish","fin_correct":true,"vader_words":[],"fin_words":[["momentum",1.5],["bullish",1.5]]},
+  {"text":"$XOM earnings in line. Oil output stable. No major strategic changes announced.","true":"Neutral","vader_compound":-0.1531,"vader_pred":"Bearish","vader_correct":false,"fin_compound":0.0,"fin_pred":"Neutral","fin_correct":true,"vader_words":[["no",-1.5]],"fin_words":[["no",-1.5],["earnings",1.5],["major",0.15]]}
+];
+
+const diffs = [
+  {"word":"beating","vader":-2.0,"fin":1.5,"diff":3.5,"note":"In everyday speech, 'beating' sounds negative. In finance, it means exceeding expectations — a positive!"},
+  {"word":"challenge","vader":0.3,"fin":-1.5,"diff":-1.8,"note":"In everyday speech, a challenge can be exciting. In earnings calls, 'facing challenges' signals trouble ahead."},
+  {"word":"challenging","vader":0.6,"fin":-1.5,"diff":-2.1,"note":"Same shift: a 'challenging quarter' in a press release almost always means a bad one."},
+  {"word":"challenges","vader":0.3,"fin":-1.5,"diff":-1.8,"note":"Consistent with 'challenge' — financial language treats this as a warning word."},
+  {"word":"disappointing","vader":-2.2,"fin":-1.5,"diff":0.7,"note":"Both agree it's negative, but FinVADER softens the score slightly — financial writing uses it more clinically than emotionally."},
+  {"word":"fell","vader":-1.3,"fin":-1.5,"diff":-0.2,"note":"FinVADER slightly amplifies this — 'stock fell' is a clear bearish signal in financial text."},
+  {"word":"best","vader":3.2,"fin":1.5,"diff":-1.7,"note":"VADER scores 'best' very highly for general positivity. FinVADER is more reserved — financial writing uses 'best' more casually."},
+  {"word":"uncertainty","vader":-1.9,"fin":-1.5,"diff":0.4,"note":"Both flag this as negative, but FinVADER tones it down slightly from VADER's strong reaction."},
+  {"word":"earnings","vader":0.2,"fin":1.5,"diff":1.3,"note":"VADER barely notices 'earnings.' FinVADER knows it's a key positive indicator — companies report earnings when things are going well."},
+  {"word":"growth","vader":0.4,"fin":1.5,"diff":1.1,"note":"VADER gives this modest credit. FinVADER weights it much higher — revenue or earnings growth is the primary signal investors watch."},
+  {"word":"momentum","vader":0.0,"fin":1.5,"diff":1.5,"note":"VADER is completely blind to 'momentum.' In financial Twitter, this term almost exclusively signals bullish sentiment."},
+  {"word":"bullish","vader":0.0,"fin":1.5,"diff":1.5,"note":"VADER doesn't know this financial term at all. FinVADER correctly identifies it as one of the clearest positive signals possible."},
+  {"word":"dividend","vader":0.2,"fin":1.5,"diff":1.3,"note":"VADER barely scores this. FinVADER knows a dividend increase is a strong bullish signal from management."},
+  {"word":"slowing","vader":-0.7,"fin":-1.5,"diff":-0.8,"note":"FinVADER amplifies this — 'slowing growth' in a financial report is a serious bearish indicator."},
+  {"word":"concerned","vader":-0.7,"fin":-0.07,"diff":0.63,"note":"In normal writing, 'concerned' strongly implies worry. In financial reports, it's often used neutrally and formally."},
+  {"word":"cuts","vader":-1.3,"fin":-1.5,"diff":-0.2,"note":"FinVADER slightly amplifies this — 'guidance cuts' or 'cost cuts' are clear bearish signals in financial context."}
+];
+
+const finOnly = [
+  {"word":"bullish","score":1.5},{"word":"tailwinds","score":1.5},{"word":"outperform","score":1.5},
+  {"word":"rally","score":1.5},{"word":"upgrade","score":1.5},{"word":"buyback","score":1.5},
+  {"word":"recovery","score":1.5},{"word":"profitability","score":1.5},{"word":"surplus","score":1.5},
+  {"word":"accomplishment","score":1.5},{"word":"achieve","score":1.5},{"word":"achievement","score":1.5},
+  {"word":"exceeded","score":1.5},{"word":"momentum","score":1.5},{"word":"earnings","score":1.5},
+  {"word":"growth","score":1.5},{"word":"dividend","score":1.5},{"word":"expand","score":1.0},
+  {"word":"revenue","score":0.5},{"word":"guidance","score":0.5},{"word":"leverage","score":0.5},
+  {"word":"bearish","score":-1.5},{"word":"headwinds","score":-1.5},{"word":"underperform","score":-1.5},
+  {"word":"downgrade","score":-1.5},{"word":"bankruptcy","score":-1.5},{"word":"default","score":-1.5},
+  {"word":"recession","score":-1.5},{"word":"missed","score":-1.5},{"word":"losses","score":-1.5},
+  {"word":"deficit","score":-1.5},{"word":"decline","score":-1.5},{"word":"decrease","score":-1.5},
+  {"word":"short","score":-1.5},{"word":"slump","score":-1.5},{"word":"liquidation","score":-1.5},
+  {"word":"inflation","score":-0.5},{"word":"restructuring","score":-0.5},{"word":"merger","score":0.5},
+  {"word":"acquisition","score":0.5},{"word":"margin","score":0.5}
+];
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function badgeClass(label) { return label === 'Bullish' ? 'bull' : label === 'Bearish' ? 'bear' : 'neut'; }
+function scoreColor(v) { return v >= 0.05 ? '#639922' : v <= -0.05 ? '#E24B4A' : '#888780'; }
+
+function wordChips(words) {
+  if (!words || words.length === 0) return '<span style="font-size:11px;color:var(--color-text-secondary)">no lexicon hits</span>';
+  return words.map(([w, s]) => `<span class="word-chip ${s > 0 ? 'word-pos' : 'word-neg'}">${w} <span style="opacity:0.7">${s > 0 ? '+' : ''}${s.toFixed(2)}</span></span>`).join('');
+}
+
+function renderTweets() {
+  const tf = document.getElementById('filter-true').value;
+  const of = document.getElementById('filter-outcome').value;
+  let filtered = results.filter(r => {
+    if (tf !== 'all' && r.true !== tf) return false;
+    if (of === 'agree' && !(r.vader_correct === r.fin_correct)) return false;
+    if (of === 'disagree' && r.vader_correct === r.fin_correct) return false;
+    if (of === 'vader-only' && !(r.vader_correct && !r.fin_correct)) return false;
+    if (of === 'fin-only' && !(!r.vader_correct && r.fin_correct)) return false;
+    return true;
+  });
+  const container = document.getElementById('tweet-list');
+  if (filtered.length === 0) { container.innerHTML = '<p style="font-size:13px;color:var(--color-text-secondary)">No tweets match this filter.</p>'; return; }
+  container.innerHTML = filtered.map(r => `
+    <div class="tweet-card">
+      <p style="font-size:13px;margin:0 0 10px;line-height:1.5">${r.text}</p>
+      <div style="margin-bottom:8px"><span style="font-size:11px;color:var(--color-text-secondary);margin-right:6px">True label:</span><span class="badge ${badgeClass(r.true)}">${r.true}</span></div>
+      <div class="grid2">
+        <div class="score-box">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500">VADER</div>
+          <div style="font-size:20px;font-weight:500;color:${scoreColor(r.vader_compound)}">${r.vader_compound.toFixed(3)}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <span class="badge ${badgeClass(r.vader_pred)}">${r.vader_pred}</span>
+            <span style="font-size:11px" class="${r.vader_correct ? 'correct' : 'wrong'}">${r.vader_correct ? '✓ correct' : '✗ wrong'}</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">lexicon hits:</div>
+          <div>${wordChips(r.vader_words)}</div>
+        </div>
+        <div class="score-box">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500">FinVADER</div>
+          <div style="font-size:20px;font-weight:500;color:${scoreColor(r.fin_compound)}">${r.fin_compound.toFixed(3)}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <span class="badge ${badgeClass(r.fin_pred)}">${r.fin_pred}</span>
+            <span style="font-size:11px" class="${r.fin_correct ? 'correct' : 'wrong'}">${r.fin_correct ? '✓ correct' : '✗ wrong'}</span>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px">lexicon hits:</div>
+          <div>${wordChips(r.fin_words)}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDiffs() {
+  const f = document.getElementById('diff-filter').value;
+  let filtered = diffs.filter(d => {
+    if (f === 'flip') return (d.vader > 0 && d.fin < 0) || (d.vader < 0 && d.fin > 0);
+    if (f === 'damp') return Math.abs(d.fin) < Math.abs(d.vader);
+    if (f === 'amp') return Math.abs(d.fin) > Math.abs(d.vader);
+    return true;
+  });
+  const maxDiff = 4;
+  document.getElementById('diff-list').innerHTML = `
+    <div style="display:grid;grid-template-columns:110px 1fr 60px 60px 70px;gap:8px;font-size:11px;color:var(--color-text-secondary);padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:4px">
+      <span>word</span><span>score shift</span><span style="text-align:right">VADER</span><span style="text-align:right">FinVADER</span><span style="text-align:right">type</span>
+    </div>
+    ${filtered.map(d => {
+      const isFlip = (d.vader > 0 && d.fin < 0) || (d.vader < 0 && d.fin > 0);
+      const isDamp = Math.abs(d.fin) < Math.abs(d.vader);
+      const typeTag = isFlip
+        ? '<span class="fl override-flip">sign flip</span>'
+        : isDamp
+          ? '<span class="fl override-damp">damped</span>'
+          : '<span class="fl" style="background:#EAF3DE;color:#3B6D11">amplified</span>';
+      const barW = Math.min(100, Math.abs(d.diff) / maxDiff * 100);
+      const barColor = d.diff > 0 ? '#639922' : '#E24B4A';
+      return `<div>
+        <div style="display:grid;grid-template-columns:110px 1fr 60px 60px 70px;gap:8px;align-items:center;padding:5px 0 3px;border-top:0.5px solid var(--color-border-tertiary)">
+          <span style="font-family:var(--font-mono);font-size:12px">${d.word}</span>
+          <div style="display:flex;align-items:center;gap:4px"><div style="width:${barW}%;min-width:2px;height:8px;background:${barColor};border-radius:2px"></div></div>
+          <span style="text-align:right;font-size:12px;color:${d.vader >= 0 ? '#639922' : '#E24B4A'}">${d.vader > 0 ? '+' : ''}${d.vader.toFixed(2)}</span>
+          <span style="text-align:right;font-size:12px;color:${d.fin >= 0 ? '#639922' : '#E24B4A'}">${d.fin > 0 ? '+' : ''}${d.fin.toFixed(2)}</span>
+          <div style="text-align:right">${typeTag}</div>
+        </div>
+        <p style="font-size:11px;color:var(--color-text-secondary);margin:2px 0 6px;line-height:1.5">${d.note}</p>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function renderUnique() {
+  const pf = document.getElementById('unique-filter').value;
+  let filtered = finOnly.filter(d => {
+    if (pf === 'pos' && d.score <= 0) return false;
+    if (pf === 'neg' && d.score >= 0) return false;
+    return true;
+  });
+  document.getElementById('unique-list').innerHTML = `
+    <div style="display:grid;grid-template-columns:150px 1fr 70px;gap:8px;font-size:11px;color:var(--color-text-secondary);padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:4px">
+      <span>term</span><span>sentiment score</span><span style="text-align:right">polarity</span>
+    </div>
+    ${filtered.map(d => {
+      const barW = Math.min(100, Math.abs(d.score) / 1.5 * 100);
+      const barColor = d.score > 0 ? '#639922' : '#E24B4A';
+      const pol = d.score > 0 ? '<span class="badge bull">positive</span>' : d.score < 0 ? '<span class="badge bear">negative</span>' : '<span class="badge neut">neutral</span>';
+      return `<div style="display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <span style="font-family:var(--font-mono);font-size:12px">${d.word}</span>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div style="width:${barW}%;min-width:2px;height:8px;background:${barColor};border-radius:2px"></div>
+          <span style="font-size:11px;color:var(--color-text-secondary)">${d.score > 0 ? '+' : ''}${d.score.toFixed(2)}</span>
+        </div>
+        <div style="text-align:right">${pol}</div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+const vCorrect = results.filter(r => r.vader_correct);
+const fCorrect = results.filter(r => r.fin_correct);
+const labels = ['Bullish', 'Bearish', 'Neutral'];
+function accFor(arr, label) {
+  const sub = results.filter(r => r.true === label);
+  const correct = arr.filter(r => r.true === label);
+  return sub.length ? Math.round(correct.length / sub.length * 100) : 0;
+}
+
+new Chart(document.getElementById('accChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'VADER', data: labels.map(l => accFor(vCorrect, l)), backgroundColor: '#378ADD', borderSkipped: false },
+      { label: 'FinVADER', data: labels.map(l => accFor(fCorrect, l)), backgroundColor: '#D85A30', borderSkipped: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, max: 110, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(128,128,128,0.1)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+document.getElementById('v-acc').textContent = Math.round(vCorrect.length / results.length * 100) + '%';
+document.getElementById('f-acc').textContent = Math.round(fCorrect.length / results.length * 100) + '%';
+
+renderTweets(); renderDiffs(); renderUnique();
+</script>
